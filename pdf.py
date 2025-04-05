@@ -1010,23 +1010,33 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import firebase_admin
-from firebase_admin import credentials, firestore
+from google.oauth2 import service_account
+from google.cloud import firestore
 
 
-def initialize_firebase():
-    # Check if Firebase is already initialized to prevent multiple initializations
-    if not len(firebase_admin._apps):
-        # Path to your downloaded JSON credentials file
-        cred = credentials.Certificate("./firebase.json")
-        firebase_admin.initialize_app(cred)
-    # Return Firestore client
-    return firestore.client()
+# def initialize_firebase():
+#     # Check if Firebase is already initialized to prevent multiple initializations
+#     if not len(firebase_admin._apps):
+#         # Path to your downloaded JSON credentials file
+#         cred = credentials.Certificate("./firebase.json")
+#         firebase_admin.initialize_app(cred)
+#     # Return Firestore client
+#     return firestore.client()
+def get_firestore_client():
+    # Access the Firebase credentials from Streamlit secrets
+    firebase_creds = st.secrets["firebase"]
+    
+    # Convert the credentials dictionary to a credentials object
+    creds = service_account.Credentials.from_service_account_info(firebase_creds)
+    
+    # Initialize and return the Firestore client
+    db = firestore.Client(credentials=creds, project=firebase_creds["project_id"])
+    return db
 def upload_to_firestore(structured_data, summary):
     """Upload only structured_data and summary to Firestore"""
     try:
         # Initialize Firebase and get db client
-        db = initialize_firebase()
+        db = get_firestore_client()
         
         # Create document with ONLY the requested fields
         doc_data = {
@@ -1036,10 +1046,12 @@ def upload_to_firestore(structured_data, summary):
         
         # Add document to 'lab_reports' collection with auto-generated ID
         doc_ref = db.collection('Reports').add(doc_data)
+        print("here done")
         
         return True
     
     except Exception as e:
+        print(e)
         return False
 
 
