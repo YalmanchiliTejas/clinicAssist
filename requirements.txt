@@ -1,8 +1,8 @@
 streamlit
-python-dotenv
 pdfplumber
+gtts
 langchain
-langchain_community
-sentence_transformers
-faiss-cpu
-torch
+google-generativeai
+pandas
+matplotlib
+numpy
