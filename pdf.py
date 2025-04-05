@@ -1010,6 +1010,38 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import firebase_admin
+from firebase_admin import credentials, firestore
+
+
+def initialize_firebase():
+    # Check if Firebase is already initialized to prevent multiple initializations
+    if not len(firebase_admin._apps):
+        # Path to your downloaded JSON credentials file
+        cred = credentials.Certificate("./firebase.json")
+        firebase_admin.initialize_app(cred)
+    # Return Firestore client
+    return firestore.client()
+def upload_to_firestore(structured_data, summary):
+    """Upload only structured_data and summary to Firestore"""
+    try:
+        # Initialize Firebase and get db client
+        db = initialize_firebase()
+        
+        # Create document with ONLY the requested fields
+        doc_data = {
+            "structured_data": structured_data,
+            "summary": summary, 
+        }
+        
+        # Add document to 'lab_reports' collection with auto-generated ID
+        doc_ref = db.collection('Reports').add(doc_data)
+        
+        return True
+    
+    except Exception as e:
+        return False
+
 
 # Page configuration
 st.set_page_config(
@@ -1537,6 +1569,7 @@ if uploaded_file is not None:
                 # Call the API and store results
                 summary = cached_summarize_lab_report(st.session_state.lab_data_str)
                 st.session_state.summary = summary
+                upload_to_firestore(st.session_state.lab_data_str, st.session_state.summary)
                 st.session_state.api_called = True
                 
                 # Parse and categorize only once
