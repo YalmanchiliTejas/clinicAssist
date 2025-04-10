@@ -706,19 +706,17 @@ def patient_submission_page(doctor_id: str):
             if not patient_name or not uploaded_file:
                 st.error("Please provide your name and upload a file.")
             else:
-                # Process PDF
                 full_text, extracted_data = get_pdf_text(uploaded_file)
                 lab_data_str = format_lab_data_for_prompt(extracted_data)
                 summary = summarize_lab_report(lab_data_str)
                 file_url = upload_file_to_storage(uploaded_file)
-                # Insert into lab_reports table
+                # Omit created_at so default now() is used
                 report_data = {
                     "id": str(uuid.uuid4()),
                     "doctor_id": doctor_id,
                     "patient_name": patient_name,
                     "file_url": file_url,
-                    "summary": summary,
-                    "created_at": datetime.utcnow().isoformat()
+                    "summary": summary
                 }
                 supabase.table("lab_reports").insert(report_data).execute()
                 st.success("Your lab report has been submitted successfully!")
