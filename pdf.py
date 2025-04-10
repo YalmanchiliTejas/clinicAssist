@@ -545,8 +545,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # ---------------------- SUPABASE INITIALIZATION ----------------------
-supabase_url = st.secrets["SUPABASE_URL"]
-supabase_key = st.secrets["SUPABASE_ANON_KEY"]
+supabase_url = st.secrets["SUPABASE"]["SUPABASE_URL"]
+supabase_key = st.secrets["SUPABASE"]["SUPABASE_ANON_KEY"]
 supabase: Client = create_client(supabase_url, supabase_key)
 
 # ---------------------- HELPER FUNCTIONS ----------------------
