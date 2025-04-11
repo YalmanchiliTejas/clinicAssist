@@ -86,7 +86,7 @@ def cached_get_pdf_text(doc):
 
 @st.cache_data
 def cached_summarize_lab_report(lab_data_str: str) -> str:
-    genai.configure(api_key="AIzaSyB_V0B3ttXMYLn-4md_jEq_PdDRz7BJ0tM")
+    
     return summarize_lab_report(lab_data_str)
 
 def get_pdf_text(doc):
@@ -214,6 +214,7 @@ def format_lab_data_for_prompt(extracted_data: List[dict]) -> str:
     return formatted
 
 def summarize_lab_report(lab_data_str: str) -> str:
+    genai.configure(api_key="AIzaSyB_V0B3ttXMYLn-4md_jEq_PdDRz7BJ0tM")
     prompt_template = PromptTemplate(
         input_variables=["lab_data"],
         template=(
@@ -544,8 +545,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # ---------------------- SUPABASE INITIALIZATION ----------------------
-supabase_url = st.secrets["SUPABASE"]["SUPABASE_URL"]
-supabase_key = st.secrets["SUPABASE"]["SUPABASE_ANON_KEY"]
+supabase_url = "https://yiatqptwrhrofodxvoey.supabase.co"  #st.secrets["SUPABASE"]["SUPABASE_URL"]
+supabase_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpYXRxcHR3cmhyb2ZvZHh2b2V5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyMjAyNjQsImV4cCI6MjA1OTc5NjI2NH0.wqlViqrGv0PO2tZ5l23fxliBbaWDSJo6KBDBXRqm4DI" #st.secrets["SUPABASE"]["SUPABASE_ANON_KEY"]
 supabase: Client = create_client(supabase_url, supabase_key)
 
 # ---------------------- HELPER FUNCTIONS ----------------------
