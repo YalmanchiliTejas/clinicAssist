@@ -12,6 +12,7 @@ import pdfplumber
 from gtts import gTTS
 from langchain import PromptTemplate
 import google.generativeai as genai
+import base64
 # import os
 # import pandas as pd
 # import matplotlib.pyplot as plt
@@ -354,9 +355,17 @@ def script(summary):
     test_results = "Here are the detailed test results:\n" + summary
     genai.configure(api_key="AIzaSyB_V0B3ttXMYLn-4md_jEq_PdDRz7BJ0tM")
     model = genai.GenerativeModel("gemini-2.0-flash")
-    response = model.generate_content(
-        f"Summarize the following test results and create a brief script of how a lab assistant will quickly tell the doctor about this lab result of a patient: {test_results}"
+    prompt = (
+        "You are a medical assistant with excellent verbal communication skills. "
+        "Please read out the following lab test results in a clear and articulate manner, "
+        "ensuring that you mention each test's name, its numeric value, its unit, and its classification. "
+        "For example, say: 'Test Hemoglobin has a value of 14.2 grams per deciliter and is classified as Normal.' "
+        "Now, based on the lab results below, generate a concise spoken script that a lab assistant would use to quickly brief a doctor:\n\n"
+        f"{summary}\n\n"
+        "Final Script:"
     )
+    response = model.generate_content(prompt)
+       
     script_text = response.text
     return script_text
 
@@ -808,12 +817,30 @@ def doctor_dashboard(doctor: dict):
                     st.dataframe(df, use_container_width=True)
                 # Generate a script (text) from the full summary.
                 script_text = script(report.get("summary", ""))
-                st.markdown("**Script Summary (to be read aloud):**")
-                st.write(script_text)
+    
+                # Provide a volume slider and a button to play the script aloud
+                volume = st.slider("Adjust Volume", min_value=0.0, max_value=1.0, value=1.0, step=0.1, key=f"vol_{report['id']}")
                 if st.button("Play Script", key=f"play_{report['id']}"):
                     audio_path = text_to_speech(script_text)
-                    st.audio(audio_path, format="audio/mp3")
-            st.markdown("---")
+                    # Convert the audio file to a base64 string so we can embed it in HTML
+                    def audio_file_to_base64(file_path: str) -> str:
+                        with open(file_path, "rb") as f:
+                            data = f.read()
+                        return base64.b64encode(data).decode("utf-8")
+                    audio_b64 = audio_file_to_base64(audio_path)
+                    audio_html = f"""
+                    <audio controls autoplay>
+                    <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
+                    Your browser does not support the audio element.
+                    </audio>
+                    <script>
+                        var audioElem = document.querySelector("audio");
+                        if (audioElem) {{
+                            audioElem.volume = {volume};
+                        }}
+                    </script>
+                    """
+                    st.markdown(audio_html, unsafe_allow_html=True)
     st.subheader("Your Patient Submission QR Code")
     qr_url = doctor.get("qr_url")
     if qr_url:
