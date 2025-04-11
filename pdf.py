@@ -728,27 +728,99 @@ def patient_submission_page(doctor_id: str):
                 st.write(summary)
 
 # ---------------------- DOCTOR DASHBOARD ----------------------
+# def doctor_dashboard(doctor: dict):
+#     st.title("Doctor Dashboard")
+#     st.markdown(f"Welcome, Dr. {doctor['name']}!")
+#     st.markdown("Below is the queue of lab reports submitted by your patients (oldest first).")
+#     res = supabase.table("lab_reports").select("*").eq("doctor_id", doctor["email"]).order("created_at", desc=False).execute()
+#     reports = res.data
+#     if not reports:
+#         st.info("No lab reports submitted yet.")
+#     else:
+#         for report in reports:
+#             st.markdown(f"**Patient:** {report['patient_name']} | **Submitted:** {report['created_at']}")
+#             st.markdown(f"**Summary:** {report['summary'][:100]}...")
+#             if st.button("View Details", key=report["id"]):
+#                 st.subheader("Detailed Report")
+#                 st.write("**Patient Name:**", report["patient_name"])
+#                 st.write("**File URL:**", report["file_url"])
+#                 st.write("**Full Summary:**", report["summary"])
+#                 st.markdown("**Additional Insights:**")
+#                 # Here, you can add further processing (e.g., generating charts)
+#                 st.pyplot(create_gauge_chart(70, 50, 100, "Normal"))
+#             st.markdown("---")
+
 def doctor_dashboard(doctor: dict):
-    st.title("Doctor Dashboard")
+    st.header("Doctor Dashboard")
     st.markdown(f"Welcome, Dr. {doctor['name']}!")
-    st.markdown("Below is the queue of lab reports submitted by your patients (oldest first).")
+    
+    # Generate and display the doctor's patient submission URL.
+    base_url = st.secrets["APP"]["APP_URL"]  # Set this in your secrets, e.g., "https://yourappurl.com"
+    custom_url = f"{base_url}/?doctor_id={doctor['email']}"
+    st.markdown("### Your Patient Submission URL:")
+    st.code(custom_url)
+    
+    st.subheader("Patient Lab Reports Queue")
     res = supabase.table("lab_reports").select("*").eq("doctor_id", doctor["email"]).order("created_at", desc=False).execute()
     reports = res.data
+    any_reports = False
     if not reports:
         st.info("No lab reports submitted yet.")
     else:
         for report in reports:
-            st.markdown(f"**Patient:** {report['patient_name']} | **Submitted:** {report['created_at']}")
-            st.markdown(f"**Summary:** {report['summary'][:100]}...")
-            if st.button("View Details", key=report["id"]):
-                st.subheader("Detailed Report")
-                st.write("**Patient Name:**", report["patient_name"])
-                st.write("**File URL:**", report["file_url"])
-                st.write("**Full Summary:**", report["summary"])
-                st.markdown("**Additional Insights:**")
-                # Here, you can add further processing (e.g., generating charts)
-                st.pyplot(create_gauge_chart(70, 50, 100, "Normal"))
+            any_reports = True
+            st.markdown(f"**Report ID:** {report['id']}")
+            submitted_at = report.get("created_at", "N/A")
+            try:
+                submitted_str = datetime.fromisoformat(submitted_at).strftime("%Y-%m-%d %H:%M:%S")
+            except Exception:
+                submitted_str = submitted_at
+            st.markdown(f"**Submitted:** {submitted_str}")
+            st.markdown(f"**Summary:** {report.get('summary', 'No summary available')}")
+            if st.button("View Detailed Report", key=report["id"]):
+                st.write("### Detailed Report")
+                # Parse the summary into a DataFrame for better visualization.
+                df = parse_summary_to_dataframe(report.get("summary", ""))
+                df = categorize_tests(df)
+                tab1, tab2, tab3 = st.tabs(["📋 Summary View", "📊 Detailed Analysis", "📝 Raw Data"])
+                with tab1:
+                    st.dataframe(df, use_container_width=True)
+                with tab2:
+                    for idx, row in df.iterrows():
+                        st.markdown(f"**{row['Test']}**: {row['Value']} – {row['Status']}")
+                        try:
+                            if "high" in row['Status'].lower():
+                                min_val = float(row['Value']) * 0.7
+                                max_val = float(row['Value']) * 0.9
+                            elif "low" in row['Status'].lower():
+                                min_val = float(row['Value']) * 1.1
+                                max_val = float(row['Value']) * 1.3
+                            else:
+                                min_val = float(row['Value']) * 0.8
+                                max_val = float(row['Value']) * 1.2
+                            gauge_chart = create_gauge_chart(float(row['Value']), min_val, max_val, row['Status'])
+                            if gauge_chart:
+                                st.pyplot(gauge_chart)
+                        except Exception as e:
+                            st.write(e)
+                        st.markdown("---")
+                with tab3:
+                    st.dataframe(df, use_container_width=True)
+                # Generate a script (text) from the full summary.
+                script_text = script(report.get("summary", ""))
+                st.markdown("**Script Summary (to be read aloud):**")
+                st.write(script_text)
+                if st.button("Play Script", key=f"play_{report['id']}"):
+                    audio_path = text_to_speech(script_text)
+                    st.audio(audio_path, format="audio/mp3")
             st.markdown("---")
+    st.subheader("Your Patient Submission QR Code")
+    qr_url = doctor.get("qr_url")
+    if qr_url:
+        st.image(qr_url)
+        st.markdown(f"Share this URL with patients: {qr_url.split('=')[1]}")
+    else:
+        st.info("QR code not available.")
 
 # ---------------------- MAIN APP ROUTING ----------------------
 def main():
