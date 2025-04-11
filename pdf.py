@@ -4,14 +4,14 @@
 
 
 
-# from typing import List
+from typing import List
 # import streamlit as st
-# import pdfplumber
+import pdfplumber
 # import re
 # import tempfile
-# from gtts import gTTS
-# from langchain import PromptTemplate
-# import google.generativeai as genai
+from gtts import gTTS
+from langchain import PromptTemplate
+import google.generativeai as genai
 # import os
 # import pandas as pd
 # import matplotlib.pyplot as plt
@@ -80,284 +80,284 @@
 #         return None
 
 # # ---------------------- Global Functions ----------------------
-# @st.cache_data
-# def cached_get_pdf_text(doc):
-#     return get_pdf_text(doc)
+@st.cache_data
+def cached_get_pdf_text(doc):
+    return get_pdf_text(doc)
 
-# @st.cache_data
-# def cached_summarize_lab_report(lab_data_str: str) -> str:
-#     genai.configure(api_key="AIzaSyB_V0B3ttXMYLn-4md_jEq_PdDRz7BJ0tM")
-#     return summarize_lab_report(lab_data_str)
+@st.cache_data
+def cached_summarize_lab_report(lab_data_str: str) -> str:
+    genai.configure(api_key="AIzaSyB_V0B3ttXMYLn-4md_jEq_PdDRz7BJ0tM")
+    return summarize_lab_report(lab_data_str)
 
-# def get_pdf_text(doc):
-#     full_text = ""
-#     if doc.type == "application/pdf":
-#         with pdfplumber.open(doc) as pdf_file:
-#             for page in pdf_file.pages:
-#                 page_text = page.extract_text()
-#                 if page_text:
-#                     full_text += page_text + "\n"
-#     else:  # assume TXT file
-#         full_text = doc.getvalue().decode("utf-8")
+def get_pdf_text(doc):
+    full_text = ""
+    if doc.type == "application/pdf":
+        with pdfplumber.open(doc) as pdf_file:
+            for page in pdf_file.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    full_text += page_text + "\n"
+    else:  # assume TXT file
+        full_text = doc.getvalue().decode("utf-8")
     
-#     lines = full_text.splitlines()
+    lines = full_text.splitlines()
 
-#     def is_test_line(line: str) -> bool:
-#         pattern = re.compile(
-#             r'^(?P<test_name>.+?)\s+'
-#             r'(?P<result>\d+(?:\.\d+)?)(?:\s+(?P<unit>[^\s]+))?'
-#         )
-#         return bool(pattern.search(line))
+    def is_test_line(line: str) -> bool:
+        pattern = re.compile(
+            r'^(?P<test_name>.+?)\s+'
+            r'(?P<result>\d+(?:\.\d+)?)(?:\s+(?P<unit>[^\s]+))?'
+        )
+        return bool(pattern.search(line))
 
-#     def group_test_chunks(lines: List[str]) -> List[List[str]]:
-#         chunks = []
-#         current_chunk = []
-#         for line in lines:
-#             if is_test_line(line):
-#                 if current_chunk:
-#                     chunks.append(current_chunk)
-#                 current_chunk = [line]
-#             else:
-#                 if current_chunk:
-#                     current_chunk.append(line)
-#         if current_chunk:
-#             chunks.append(current_chunk)
-#         return chunks
+    def group_test_chunks(lines: List[str]) -> List[List[str]]:
+        chunks = []
+        current_chunk = []
+        for line in lines:
+            if is_test_line(line):
+                if current_chunk:
+                    chunks.append(current_chunk)
+                current_chunk = [line]
+            else:
+                if current_chunk:
+                    current_chunk.append(line)
+        if current_chunk:
+            chunks.append(current_chunk)
+        return chunks
 
-#     def parse_test_info(first_line: str):
-#         main_test_pattern = re.compile(
-#             r'^(?P<test_name>.+?)\s+'
-#             r'(?P<result>\d+(?:\.\d+)?)(?:\s+(?P<unit>[^\s]+))?'
-#         )
-#         match = main_test_pattern.search(first_line)
-#         if not match:
-#             return None, None
-#         return match.groupdict(), match
+    def parse_test_info(first_line: str):
+        main_test_pattern = re.compile(
+            r'^(?P<test_name>.+?)\s+'
+            r'(?P<result>\d+(?:\.\d+)?)(?:\s+(?P<unit>[^\s]+))?'
+        )
+        match = main_test_pattern.search(first_line)
+        if not match:
+            return None, None
+        return match.groupdict(), match
 
-#     def extract_ranges_with_labels(chunk: List[str]) -> List[dict]:
-#         range_pattern = re.compile(
-#             r'(?P<label>[A-Za-z\s()]+):?\s*'
-#             r'(?:(?P<operator><|>|<=|>=)?\s*(?P<lower>\d+(?:\.\d+)?))?'
-#             r'(?:\s*(?:-|–|to)\s*(?P<upper>\d+(?:\.\d+)?))?\s*(?P<unit>[^\s]+)?'
-#         )
-#         remaining_text = " ".join(chunk).strip()
-#         matches = range_pattern.finditer(remaining_text)
-#         labeled_ranges = []
-#         for match in matches:
-#             label_data = {
-#                 "label": (match.group("label") or "").strip(),
-#                 "lower": float(match.group("lower")) if match.group("lower") else None,
-#                 "upper": float(match.group("upper")) if match.group("upper") else None,
-#                 "operator": match.group("operator"),
-#                 "unit": match.group("unit")
-#             }
-#             labeled_ranges.append(label_data)
-#         return labeled_ranges
+    def extract_ranges_with_labels(chunk: List[str]) -> List[dict]:
+        range_pattern = re.compile(
+            r'(?P<label>[A-Za-z\s()]+):?\s*'
+            r'(?:(?P<operator><|>|<=|>=)?\s*(?P<lower>\d+(?:\.\d+)?))?'
+            r'(?:\s*(?:-|–|to)\s*(?P<upper>\d+(?:\.\d+)?))?\s*(?P<unit>[^\s]+)?'
+        )
+        remaining_text = " ".join(chunk).strip()
+        matches = range_pattern.finditer(remaining_text)
+        labeled_ranges = []
+        for match in matches:
+            label_data = {
+                "label": (match.group("label") or "").strip(),
+                "lower": float(match.group("lower")) if match.group("lower") else None,
+                "upper": float(match.group("upper")) if match.group("upper") else None,
+                "operator": match.group("operator"),
+                "unit": match.group("unit")
+            }
+            labeled_ranges.append(label_data)
+        return labeled_ranges
 
-#     def filter_ranges(test_data: dict) -> dict:
-#         test_name = test_data.get("test_name", "").strip().lower()
-#         try:
-#             result_value = float(test_data.get("result", "0"))
-#         except ValueError:
-#             result_value = None
-#         valid_ranges = []
-#         for r in test_data.get("ranges_with_labels", []):
-#             label = (r.get("label") or "").strip().lower()
-#             if label == test_name and result_value is not None and r.get("lower") == result_value:
-#                 continue
-#             if r.get("lower") is None and r.get("upper") is None:
-#                 continue
-#             valid_ranges.append(r)
-#         test_data["ranges_with_labels"] = valid_ranges
-#         return test_data
+    def filter_ranges(test_data: dict) -> dict:
+        test_name = test_data.get("test_name", "").strip().lower()
+        try:
+            result_value = float(test_data.get("result", "0"))
+        except ValueError:
+            result_value = None
+        valid_ranges = []
+        for r in test_data.get("ranges_with_labels", []):
+            label = (r.get("label") or "").strip().lower()
+            if label == test_name and result_value is not None and r.get("lower") == result_value:
+                continue
+            if r.get("lower") is None and r.get("upper") is None:
+                continue
+            valid_ranges.append(r)
+        test_data["ranges_with_labels"] = valid_ranges
+        return test_data
 
-#     test_chunks = group_test_chunks(lines)
-#     extracted_data = []
-#     for chunk in test_chunks:
-#         first_line = chunk[0]
-#         test_info, _ = parse_test_info(first_line)
-#         if not test_info:
-#             continue
-#         ranges_with_labels = extract_ranges_with_labels(chunk)
-#         test_info["ranges_with_labels"] = ranges_with_labels
-#         extracted_data.append(test_info)
-#     extracted_data = [filter_ranges(test) for test in extracted_data]
-#     return full_text, extracted_data
+    test_chunks = group_test_chunks(lines)
+    extracted_data = []
+    for chunk in test_chunks:
+        first_line = chunk[0]
+        test_info, _ = parse_test_info(first_line)
+        if not test_info:
+            continue
+        ranges_with_labels = extract_ranges_with_labels(chunk)
+        test_info["ranges_with_labels"] = ranges_with_labels
+        extracted_data.append(test_info)
+    extracted_data = [filter_ranges(test) for test in extracted_data]
+    return full_text, extracted_data
 
-# def format_lab_data_for_prompt(extracted_data: List[dict]) -> str:
-#     formatted = ""
-#     for test in extracted_data:
-#         test_name = test.get("test_name", "")
-#         result = test.get("result", "")
-#         test_unit = test.get("unit", "")
-#         ranges_with_labels = test.get("ranges_with_labels", [])
-#         range_str_list = []
-#         for range_item in ranges_with_labels:
-#             label = range_item.get("label", "")
-#             lower = range_item.get("lower")
-#             upper = range_item.get("upper")
-#             operator = range_item.get("operator", "")
-#             ref_unit = range_item.get("unit", test_unit)
-#             unit_str = f" {ref_unit}" if test_unit == ref_unit and ref_unit else ""
-#             if lower is not None and upper is not None:
-#                 if label:
-#                     range_str_list.append(f"{label}: {lower}-{upper}{unit_str}")
-#                 else:
-#                     range_str_list.append(f"{lower}-{upper}{unit_str}")
-#             elif operator and lower is not None:
-#                 if label:
-#                     range_str_list.append(f"{label}: {operator} {lower}{unit_str}")
-#                 else:
-#                     range_str_list.append(f"{operator} {lower}{unit_str}")
-#         formatted_ranges_str = "; ".join(range_str_list)
-#         formatted += f"- {test_name}: {result} {test_unit} (Reference Range: {formatted_ranges_str})\n"
-#     return formatted
+def format_lab_data_for_prompt(extracted_data: List[dict]) -> str:
+    formatted = ""
+    for test in extracted_data:
+        test_name = test.get("test_name", "")
+        result = test.get("result", "")
+        test_unit = test.get("unit", "")
+        ranges_with_labels = test.get("ranges_with_labels", [])
+        range_str_list = []
+        for range_item in ranges_with_labels:
+            label = range_item.get("label", "")
+            lower = range_item.get("lower")
+            upper = range_item.get("upper")
+            operator = range_item.get("operator", "")
+            ref_unit = range_item.get("unit", test_unit)
+            unit_str = f" {ref_unit}" if test_unit == ref_unit and ref_unit else ""
+            if lower is not None and upper is not None:
+                if label:
+                    range_str_list.append(f"{label}: {lower}-{upper}{unit_str}")
+                else:
+                    range_str_list.append(f"{lower}-{upper}{unit_str}")
+            elif operator and lower is not None:
+                if label:
+                    range_str_list.append(f"{label}: {operator} {lower}{unit_str}")
+                else:
+                    range_str_list.append(f"{operator} {lower}{unit_str}")
+        formatted_ranges_str = "; ".join(range_str_list)
+        formatted += f"- {test_name}: {result} {test_unit} (Reference Range: {formatted_ranges_str})\n"
+    return formatted
 
-# def summarize_lab_report(lab_data_str: str) -> str:
-#     prompt_template = PromptTemplate(
-#         input_variables=["lab_data"],
-#         template=(
-#             "You are a medical assistant with expertise in lab report analysis. Below is structured lab report data "
-#             "in bullet-point format, where each entry is a medically relevant lab test result. Please ignore any extraneous information such as addresses, administrative details, guidelines, or commentary that are not actual lab test results.\n\n"
-#             "Each test entry includes the test name, numeric result, unit, and reference intervals "
-#             "which may or may not have labels (e.g., Low (desirable): <200 mg/dL, Moderate (borderline): 200–239 mg/dL, High: ≥240 mg/dL).\n\n"
-#             "For each test:\n"
-#             "1. If labeled intervals are present: Determine which labeled interval the numeric result falls into and use that label as the classification.\n"
-#             "2. If NO labels are present but there is a reference range: Compare the value to the range and classify as:\n"
-#             "   - 'Normal' if the value is within the reference range\n"
-#             "   - 'Abnormal - Low' if the value is below the reference range\n"
-#             "   - 'Abnormal - High' if the value is above the reference range\n"
-#             "3. If neither labels nor ranges are present: Classify as 'No reference range available'\n\n"
-#             "Output a final summary in a bullet list format:\n"
-#             "• [Test Name]: [Numeric Value] - [Classification]\n\n"
-#             "Do not include any intermediate steps or additional text.\n\n"
-#             "Lab Report Data:\n{lab_data}\n\n"
-#             "Final Summary:"
-#         )
-#     )
-#     compiled_prompt = prompt_template.format(lab_data=lab_data_str)
-#     model = genai.GenerativeModel("gemini-2.0-flash")
-#     response = model.generate_content(compiled_prompt)
-#     summary = response.text
-#     return summary
+def summarize_lab_report(lab_data_str: str) -> str:
+    prompt_template = PromptTemplate(
+        input_variables=["lab_data"],
+        template=(
+            "You are a medical assistant with expertise in lab report analysis. Below is structured lab report data "
+            "in bullet-point format, where each entry is a medically relevant lab test result. Please ignore any extraneous information such as addresses, administrative details, guidelines, or commentary that are not actual lab test results.\n\n"
+            "Each test entry includes the test name, numeric result, unit, and reference intervals "
+            "which may or may not have labels (e.g., Low (desirable): <200 mg/dL, Moderate (borderline): 200–239 mg/dL, High: ≥240 mg/dL).\n\n"
+            "For each test:\n"
+            "1. If labeled intervals are present: Determine which labeled interval the numeric result falls into and use that label as the classification.\n"
+            "2. If NO labels are present but there is a reference range: Compare the value to the range and classify as:\n"
+            "   - 'Normal' if the value is within the reference range\n"
+            "   - 'Abnormal - Low' if the value is below the reference range\n"
+            "   - 'Abnormal - High' if the value is above the reference range\n"
+            "3. If neither labels nor ranges are present: Classify as 'No reference range available'\n\n"
+            "Output a final summary in a bullet list format:\n"
+            "• [Test Name]: [Numeric Value] - [Classification]\n\n"
+            "Do not include any intermediate steps or additional text.\n\n"
+            "Lab Report Data:\n{lab_data}\n\n"
+            "Final Summary:"
+        )
+    )
+    compiled_prompt = prompt_template.format(lab_data=lab_data_str)
+    model = genai.GenerativeModel("gemini-2.0-flash")
+    response = model.generate_content(compiled_prompt)
+    summary = response.text
+    return summary
 
-# def text_to_speech(text: str) -> str:
-#     tts = gTTS(text=text, lang="en")
-#     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
-#         tts.save(f.name)
-#         audio_file = f.name
-#     return audio_file
+def text_to_speech(text: str) -> str:
+    tts = gTTS(text=text, lang="en")
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
+        tts.save(f.name)
+        audio_file = f.name
+    return audio_file
 
-# def parse_summary_to_dataframe(summary_text):
-#     lines = summary_text.strip().split('\n')
-#     data = []
-#     for line in lines:
-#         if not line or line.strip() in ['•', '-']:
-#             continue
-#         line = line.strip().lstrip('•').lstrip('-').strip()
-#         parts = line.split(':')
-#         if len(parts) >= 2:
-#             test_name = parts[0].strip()
-#             value_status = parts[1].strip()
-#             value_status_parts = value_status.split('-')
-#             if len(value_status_parts) >= 2:
-#                 value = value_status_parts[0].strip()
-#                 status = '-'.join(value_status_parts[1:]).strip()
-#                 data.append({
-#                     'Test': test_name,
-#                     'Value': value,
-#                     'Status': status
-#                 })
-#     return pd.DataFrame(data)
+def parse_summary_to_dataframe(summary_text):
+    lines = summary_text.strip().split('\n')
+    data = []
+    for line in lines:
+        if not line or line.strip() in ['•', '-']:
+            continue
+        line = line.strip().lstrip('•').lstrip('-').strip()
+        parts = line.split(':')
+        if len(parts) >= 2:
+            test_name = parts[0].strip()
+            value_status = parts[1].strip()
+            value_status_parts = value_status.split('-')
+            if len(value_status_parts) >= 2:
+                value = value_status_parts[0].strip()
+                status = '-'.join(value_status_parts[1:]).strip()
+                data.append({
+                    'Test': test_name,
+                    'Value': value,
+                    'Status': status
+                })
+    return pd.DataFrame(data)
 
-# def categorize_tests(df):
-#     categories = {
-#         'Complete Blood Count': [
-#             'Hemoglobin', 'RBC', 'HCT', 'MCV', 'MCH', 'MCHC', 'RDW-CV',
-#             'Total Leucocyte Count', 'Neutrophils', 'Lymphocytes', 'Monocytes',
-#             'Eosinophils', 'Absolute Neutrophil Count', 'Absolute Lymphocyte Count',
-#             'Absolute Monocyte Count', 'Absolute Eosinophil Count', 'Absolute Basophil Count',
-#             'Platelet Count', 'MPV', 'PDW', 'Erythrocyte Sedimentation Rate'
-#         ],
-#         'Lipid Profile': [
-#             'Cholesterol - Total', 'Triglycerides', 'Cholesterol - HDL', 
-#             'Cholesterol - LDL', 'Cholesterol- VLDL', 'Cholesterol : HDL Cholesterol',
-#             'LDL : HDL Cholesterol', 'Non HDL Cholesterol'
-#         ],
-#         'Glucose Metabolism': [
-#             'Glucose - Fasting', 'Glucose', 'HbA1c', 'Insulin'
-#         ],
-#         'Liver Function': [
-#             'Bilirubin', 'ALT', 'AST', 'ALP', 'GGT', 'Protein - Total', 'Albumin'
-#         ],
-#         'Kidney Function': [
-#             'Urea', 'Creatinine', 'Uric Acid', 'eGFR'
-#         ],
-#         'Electrolytes': [
-#             'Sodium', 'Potassium', 'Chloride', 'Calcium', 'Phosphorus', 'Magnesium'
-#         ],
-#         'Other Tests': []
-#     }
-#     df['Category'] = 'Other Tests'
-#     for category, tests in categories.items():
-#         for test in tests:
-#             df.loc[df['Test'].str.contains(test, case=False), 'Category'] = category
-#     return df
+def categorize_tests(df):
+    categories = {
+        'Complete Blood Count': [
+            'Hemoglobin', 'RBC', 'HCT', 'MCV', 'MCH', 'MCHC', 'RDW-CV',
+            'Total Leucocyte Count', 'Neutrophils', 'Lymphocytes', 'Monocytes',
+            'Eosinophils', 'Absolute Neutrophil Count', 'Absolute Lymphocyte Count',
+            'Absolute Monocyte Count', 'Absolute Eosinophil Count', 'Absolute Basophil Count',
+            'Platelet Count', 'MPV', 'PDW', 'Erythrocyte Sedimentation Rate'
+        ],
+        'Lipid Profile': [
+            'Cholesterol - Total', 'Triglycerides', 'Cholesterol - HDL', 
+            'Cholesterol - LDL', 'Cholesterol- VLDL', 'Cholesterol : HDL Cholesterol',
+            'LDL : HDL Cholesterol', 'Non HDL Cholesterol'
+        ],
+        'Glucose Metabolism': [
+            'Glucose - Fasting', 'Glucose', 'HbA1c', 'Insulin'
+        ],
+        'Liver Function': [
+            'Bilirubin', 'ALT', 'AST', 'ALP', 'GGT', 'Protein - Total', 'Albumin'
+        ],
+        'Kidney Function': [
+            'Urea', 'Creatinine', 'Uric Acid', 'eGFR'
+        ],
+        'Electrolytes': [
+            'Sodium', 'Potassium', 'Chloride', 'Calcium', 'Phosphorus', 'Magnesium'
+        ],
+        'Other Tests': []
+    }
+    df['Category'] = 'Other Tests'
+    for category, tests in categories.items():
+        for test in tests:
+            df.loc[df['Test'].str.contains(test, case=False), 'Category'] = category
+    return df
 
-# def create_gauge_chart(value, min_val, max_val, status):
-#     try:
-#         value = float(value)
-#         fig, ax = plt.subplots(figsize=(3, 0.5))
-#         is_dark_mode = plt.rcParams["axes.facecolor"] == "#1e1e1e"
-#         if is_dark_mode:
-#             fig.set_facecolor('#1e1e1e')
-#             ax.set_facecolor('#1e1e1e')
-#             text_color = '#e0e0e0'
-#             bar_color = '#4a5568'
-#         else:
-#             fig.set_facecolor('#ffffff')
-#             ax.set_facecolor('#ffffff')
-#             text_color = '#333333'
-#             bar_color = 'lightgray'
-#         if 'normal' in status.lower():
-#             color = '#4ade80' if is_dark_mode else 'green'
-#         elif 'high' in status.lower() or 'risk' in status.lower():
-#             color = '#f87171' if is_dark_mode else 'red'
-#         elif 'intermediate' in status.lower() or 'borderline' in status.lower():
-#             color = '#fbbf24' if is_dark_mode else 'orange'
-#         else:
-#             color = '#60a5fa' if is_dark_mode else 'blue'
-#         if min_val is None and max_val is None:
-#             min_val = value * 0.5
-#             max_val = value * 1.5
-#         elif min_val is None:
-#             min_val = max_val * 0.5
-#         elif max_val is None:
-#             max_val = min_val * 1.5
-#         plot_value = max(min_val, min(value, max_val))
-#         ax.barh(0, max_val - min_val, left=min_val, height=0.3, color=bar_color)
-#         ax.barh(0, plot_value - min_val, left=min_val, height=0.3, color=color)
-#         ax.plot(plot_value, 0, 'o', color=text_color, markersize=8)
-#         ax.set_xlim(min_val * 0.9, max_val * 1.1)
-#         ax.set_ylim(-0.5, 0.5)
-#         ax.axis('off')
-#         ax.text(min_val, -0.4, f'{min_val}', ha='center', fontsize=8, color=text_color)
-#         ax.text(max_val, -0.4, f'{max_val}', ha='center', fontsize=8, color=text_color)
-#         ax.text(plot_value, 0.4, f'{value}', ha='center', fontsize=9, fontweight='bold', color=text_color)
-#         return fig
-#     except Exception as e:
-#         st.write(e)
-#         return None
+def create_gauge_chart(value, min_val, max_val, status):
+    try:
+        value = float(value)
+        fig, ax = plt.subplots(figsize=(3, 0.5))
+        is_dark_mode = plt.rcParams["axes.facecolor"] == "#1e1e1e"
+        if is_dark_mode:
+            fig.set_facecolor('#1e1e1e')
+            ax.set_facecolor('#1e1e1e')
+            text_color = '#e0e0e0'
+            bar_color = '#4a5568'
+        else:
+            fig.set_facecolor('#ffffff')
+            ax.set_facecolor('#ffffff')
+            text_color = '#333333'
+            bar_color = 'lightgray'
+        if 'normal' in status.lower():
+            color = '#4ade80' if is_dark_mode else 'green'
+        elif 'high' in status.lower() or 'risk' in status.lower():
+            color = '#f87171' if is_dark_mode else 'red'
+        elif 'intermediate' in status.lower() or 'borderline' in status.lower():
+            color = '#fbbf24' if is_dark_mode else 'orange'
+        else:
+            color = '#60a5fa' if is_dark_mode else 'blue'
+        if min_val is None and max_val is None:
+            min_val = value * 0.5
+            max_val = value * 1.5
+        elif min_val is None:
+            min_val = max_val * 0.5
+        elif max_val is None:
+            max_val = min_val * 1.5
+        plot_value = max(min_val, min(value, max_val))
+        ax.barh(0, max_val - min_val, left=min_val, height=0.3, color=bar_color)
+        ax.barh(0, plot_value - min_val, left=min_val, height=0.3, color=color)
+        ax.plot(plot_value, 0, 'o', color=text_color, markersize=8)
+        ax.set_xlim(min_val * 0.9, max_val * 1.1)
+        ax.set_ylim(-0.5, 0.5)
+        ax.axis('off')
+        ax.text(min_val, -0.4, f'{min_val}', ha='center', fontsize=8, color=text_color)
+        ax.text(max_val, -0.4, f'{max_val}', ha='center', fontsize=8, color=text_color)
+        ax.text(plot_value, 0.4, f'{value}', ha='center', fontsize=9, fontweight='bold', color=text_color)
+        return fig
+    except Exception as e:
+        st.write(e)
+        return None
 
-# def script(summary):
-#     test_results = "Here are the detailed test results:\n" + summary
-#     genai.configure(api_key="AIzaSyB_V0B3ttXMYLn-4md_jEq_PdDRz7BJ0tM")
-#     model = genai.GenerativeModel("gemini-2.0-flash")
-#     response = model.generate_content(
-#         f"Summarize the following test results and create a brief script of how a lab assistant will quickly tell the doctor about this lab result of a patient: {test_results}"
-#     )
-#     script_text = response.text
-#     return script_text
+def script(summary):
+    test_results = "Here are the detailed test results:\n" + summary
+    genai.configure(api_key="AIzaSyB_V0B3ttXMYLn-4md_jEq_PdDRz7BJ0tM")
+    model = genai.GenerativeModel("gemini-2.0-flash")
+    response = model.generate_content(
+        f"Summarize the following test results and create a brief script of how a lab assistant will quickly tell the doctor about this lab result of a patient: {test_results}"
+    )
+    script_text = response.text
+    return script_text
 
 # # ---------------------- URL Query Parameters ----------------------
 # params = st.experimental_get_query_params()
@@ -550,79 +550,79 @@ supabase_key = st.secrets["SUPABASE"]["SUPABASE_ANON_KEY"]
 supabase: Client = create_client(supabase_url, supabase_key)
 
 # ---------------------- HELPER FUNCTIONS ----------------------
-def get_pdf_text(pdf_file) -> tuple[str, list]:
-    """Extract text from PDF using pdfplumber and split it into test entries."""
-    full_text = ""
-    with pdfplumber.open(pdf_file) as pdf:
-        for page in pdf.pages:
-            page_text = page.extract_text()
-            if page_text:
-                full_text += page_text + "\n"
-    lines = full_text.splitlines()
+# def get_pdf_text(pdf_file) -> tuple[str, list]:
+#     """Extract text from PDF using pdfplumber and split it into test entries."""
+#     full_text = ""
+#     with pdfplumber.open(pdf_file) as pdf:
+#         for page in pdf.pages:
+#             page_text = page.extract_text()
+#             if page_text:
+#                 full_text += page_text + "\n"
+#     lines = full_text.splitlines()
 
-    def is_test_line(line: str) -> bool:
-        pattern = re.compile(r'^(?P<test_name>.+?)\s+(?P<result>\d+(?:\.\d+)?)(?:\s+(?P<unit>[^\s]+))?')
-        return bool(pattern.search(line))
+#     def is_test_line(line: str) -> bool:
+#         pattern = re.compile(r'^(?P<test_name>.+?)\s+(?P<result>\d+(?:\.\d+)?)(?:\s+(?P<unit>[^\s]+))?')
+#         return bool(pattern.search(line))
 
-    def group_test_chunks(lines: list) -> list:
-        chunks = []
-        current_chunk = []
-        for line in lines:
-            if is_test_line(line):
-                if current_chunk:
-                    chunks.append(current_chunk)
-                current_chunk = [line]
-            else:
-                if current_chunk:
-                    current_chunk.append(line)
-        if current_chunk:
-            chunks.append(current_chunk)
-        return chunks
+#     def group_test_chunks(lines: list) -> list:
+#         chunks = []
+#         current_chunk = []
+#         for line in lines:
+#             if is_test_line(line):
+#                 if current_chunk:
+#                     chunks.append(current_chunk)
+#                 current_chunk = [line]
+#             else:
+#                 if current_chunk:
+#                     current_chunk.append(line)
+#         if current_chunk:
+#             chunks.append(current_chunk)
+#         return chunks
 
-    def parse_test_info(first_line: str) -> tuple[dict, any]:
-        pattern = re.compile(r'^(?P<test_name>.+?)\s+(?P<result>\d+(?:\.\d+)?)(?:\s+(?P<unit>[^\s]+))?')
-        match = pattern.search(first_line)
-        if not match:
-            return None, None
-        return match.groupdict(), match
+#     def parse_test_info(first_line: str) -> tuple[dict, any]:
+#         pattern = re.compile(r'^(?P<test_name>.+?)\s+(?P<result>\d+(?:\.\d+)?)(?:\s+(?P<unit>[^\s]+))?')
+#         match = pattern.search(first_line)
+#         if not match:
+#             return None, None
+#         return match.groupdict(), match
 
-    def extract_ranges(chunk: list) -> list:
-        # This function can be improved; for now, it extracts any numeric ranges
-        pattern = re.compile(r'(?P<label>[A-Za-z\s()]+):?\s*(?P<range>\d+(?:\.\d+)?(?:[-–]\d+(?:\.\d+)?)?)')
-        text = " ".join(chunk)
-        matches = pattern.finditer(text)
-        ranges = []
-        for m in matches:
-            ranges.append(m.groupdict())
-        return ranges
+#     def extract_ranges(chunk: list) -> list:
+#         # This function can be improved; for now, it extracts any numeric ranges
+#         pattern = re.compile(r'(?P<label>[A-Za-z\s()]+):?\s*(?P<range>\d+(?:\.\d+)?(?:[-–]\d+(?:\.\d+)?)?)')
+#         text = " ".join(chunk)
+#         matches = pattern.finditer(text)
+#         ranges = []
+#         for m in matches:
+#             ranges.append(m.groupdict())
+#         return ranges
 
-    chunks = group_test_chunks(lines)
-    extracted = []
-    for chunk in chunks:
-        info, _ = parse_test_info(chunk[0])
-        if info:
-            info["ranges"] = extract_ranges(chunk)
-            extracted.append(info)
-    return full_text, extracted
+#     chunks = group_test_chunks(lines)
+#     extracted = []
+#     for chunk in chunks:
+#         info, _ = parse_test_info(chunk[0])
+#         if info:
+#             info["ranges"] = extract_ranges(chunk)
+#             extracted.append(info)
+#     return full_text, extracted
 
-def format_lab_data_for_prompt(extracted_data: list) -> str:
-    formatted = ""
-    for test in extracted_data:
-        test_name = test.get("test_name", "")
-        result = test.get("result", "")
-        unit = test.get("unit", "")
-        ranges = test.get("ranges", [])
-        ranges_str = "; ".join([f"{r['label'].strip()}: {r['range']}" for r in ranges]) if ranges else "N/A"
-        formatted += f"- {test_name}: {result} {unit} (Ranges: {ranges_str})\n"
-    return formatted
+# def format_lab_data_for_prompt(extracted_data: list) -> str:
+#     formatted = ""
+#     for test in extracted_data:
+#         test_name = test.get("test_name", "")
+#         result = test.get("result", "")
+#         unit = test.get("unit", "")
+#         ranges = test.get("ranges", [])
+#         ranges_str = "; ".join([f"{r['label'].strip()}: {r['range']}" for r in ranges]) if ranges else "N/A"
+#         formatted += f"- {test_name}: {result} {unit} (Ranges: {ranges_str})\n"
+#     return formatted
 
-def summarize_lab_report(lab_data_str: str) -> str:
-    """
-    Dummy summarization function.
-    Replace this with your LLM API call (e.g., Gemini, GPT) as needed.
-    """
-    # For now, we return a dummy summary.
-    return "Dummy summary: All test values are within normal ranges."
+# def summarize_lab_report(lab_data_str: str) -> str:
+#     """
+#     Dummy summarization function.
+#     Replace this with your LLM API call (e.g., Gemini, GPT) as needed.
+#     """
+#     # For now, we return a dummy summary.
+#     return "Dummy summary: All test values are within normal ranges."
 
 def create_gauge_chart(value: float, min_val: float, max_val: float, status: str):
     """Creates a simple gauge chart using matplotlib."""
