@@ -751,6 +751,7 @@ def main():
     # If the URL has a "doctor_id" query parameter, show the patient submission page.
     if "doctor_id" in query_params:
         doctor_id = query_params["doctor_id"][0]
+        st.write("You are on the patient submission page.", doctor_id)
         patient_submission_page(doctor_id)
     else:
         # Otherwise, show doctor authentication and dashboard.
