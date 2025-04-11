@@ -360,7 +360,7 @@ def script(summary):
         "Please read out the following lab test results in a clear and articulate manner, "
         "ensuring that you mention each test's name, its numeric value, its unit, and its classification. "
         "For example, say: 'Test Hemoglobin has a value of 14.2 grams per deciliter and is classified as Normal.' "
-        "Now, based on the lab results below, generate a concise spoken script that a lab assistant would use to quickly brief a doctor:\n\n"
+        "Now, based on the lab results below, generate a concise spoken script that a lab assistant would use to quickly brief a doctor, and start directly from greeting the doctor:\n\n"
         f"{summary}\n\n"
         "Final Script:"
     )
@@ -898,7 +898,10 @@ def doctor_dashboard(doctor: dict):
         with tab4:
             st.header("Speech Playback")
             # Generate the script text from the summary
-            script_text = script(report.get("summary", ""))
+            script_key = f"script_text_{report['id']}"
+            if script_key not in st.session_state:
+                st.session_state[script_key] = script(report.get("summary", ""))
+            script_text = st.session_state[script_key]
             st.write("Below is the script that will be spoken:")
             st.text_area("", script_text, height=150, key=f"script_{report['id']}")
                     
