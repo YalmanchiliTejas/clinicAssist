@@ -755,10 +755,10 @@ def doctor_dashboard(doctor: dict):
     st.markdown(f"Welcome, Dr. {doctor['name']}!")
     
     # Generate and display the doctor's patient submission URL.
-    base_url = st.secrets["APP"]["APP_URL"]  # Set this in your secrets, e.g., "https://yourappurl.com"
-    custom_url = f"{base_url}/?doctor_id={doctor['email']}"
-    st.markdown("### Your Patient Submission URL:")
-    st.code(custom_url)
+    # base_url = st.secrets["APP"]["APP_URL"]  # Set this in your secrets, e.g., "https://yourappurl.com"
+    # custom_url = f"{base_url}/?doctor_id={doctor['email']}"
+    # st.markdown("### Your Patient Submission URL:")
+    # st.code(custom_url)
     
     st.subheader("Patient Lab Reports Queue")
     res = supabase.table("lab_reports").select("*").eq("doctor_id", doctor["email"]).order("created_at", desc=False).execute()
