@@ -5,7 +5,7 @@
 
 
 from typing import List
-# import streamlit as st
+import streamlit as st
 import pdfplumber
 # import re
 # import tempfile
@@ -533,10 +533,9 @@ def script(summary):
 
 
 
-import streamlit as st
+
 import uuid
 import tempfile
-import pdfplumber
 import re
 from datetime import datetime
 import bcrypt
