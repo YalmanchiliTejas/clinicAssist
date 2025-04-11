@@ -854,88 +854,108 @@ def doctor_dashboard(doctor: dict):
     st.header("Doctor Dashboard")
     st.markdown(f"Welcome, Dr. {doctor['name']}!")
     
-    st.subheader("Patient Lab Reports Queue")
-    res = supabase.table("lab_reports").select("*").eq("doctor_id", doctor["email"]).order("created_at", desc=False).execute()
-    reports = res.data
-    any_reports = False
-    if not reports:
-        st.info("No lab reports submitted yet.")
-    else:
-        for report in reports:
-            any_reports = True
-            st.markdown(f"**Report ID:** {report['id']}")
-            submitted_at = report.get("created_at", "N/A")
-            try:
-                submitted_str = datetime.fromisoformat(submitted_at).strftime("%Y-%m-%d %H:%M:%S")
-            except Exception:
-                submitted_str = submitted_at
-            st.markdown(f"**Submitted:** {submitted_str}")
-            st.markdown(f"**Summary:** {report.get('summary', 'No summary available')}")
-            if st.button("View Detailed Report", key=report["id"]):
-                st.write("### Detailed Report")
-                # Assume parse_summary_to_dataframe and categorize_tests are defined elsewhere
-                df = parse_summary_to_dataframe(report.get("summary", ""))
-                df = categorize_tests(df)
-                
-                # Create four tabs: Summary, Analysis, Raw Data, and Speaker
-                tab1, tab2, tab3, tab4 = st.tabs(["📋 Summary View", "📊 Detailed Analysis", "📝 Raw Data", "🔊 Speaker"])
-                
-                with tab1:
-                    st.dataframe(df, use_container_width=True)
-                
-                with tab2:
-                    for idx, row in df.iterrows():
-                        st.markdown(f"**{row['Test']}**: {row['Value']} – {row['Status']}")
-                        try:
-                            if "high" in row['Status'].lower():
-                                min_val = float(row['Value']) * 0.7
-                                max_val = float(row['Value']) * 0.9
-                            elif "low" in row['Status'].lower():
-                                min_val = float(row['Value']) * 1.1
-                                max_val = float(row['Value']) * 1.3
-                            else:
-                                min_val = float(row['Value']) * 0.8
-                                max_val = float(row['Value']) * 1.2
-                            gauge_chart = create_gauge_chart(float(row['Value']), min_val, max_val, row['Status'])
-                            if gauge_chart:
-                                st.pyplot(gauge_chart)
-                        except Exception as e:
-                            st.write(e)
-                        st.markdown("---")
-                
-                with tab3:
-                    st.dataframe(df, use_container_width=True)
-                
-                with tab4:
-                    st.header("Speech Playback")
-                    # Generate the script text from the summary
-                    script_text = script(report.get("summary", ""))
-                    st.write("Below is the script that will be spoken:")
-                    st.text_area("", script_text, height=150, key=f"script_{report['id']}")
+    # Initialize active_report in session state if not already set
+    if "active_report" not in st.session_state:
+        st.session_state.active_report = None
+
+    # If a report has been selected, show the detailed view
+    if st.session_state.active_report is not None:
+        report = st.session_state.active_report
+        st.write("### Detailed Report")
+        # Assume parse_summary_to_dataframe and categorize_tests are defined elsewhere
+        df = parse_summary_to_dataframe(report.get("summary", ""))
+        df = categorize_tests(df)
+        
+        # Create four tabs: Summary View, Detailed Analysis, Raw Data, and Speaker
+        tab1, tab2, tab3, tab4 = st.tabs(["📋 Summary View", "📊 Detailed Analysis", "📝 Raw Data", "🔊 Speaker"])
+        
+        with tab1:
+            st.dataframe(df, use_container_width=True)
+        
+        with tab2:
+            for idx, row in df.iterrows():
+                st.markdown(f"**{row['Test']}**: {row['Value']} – {row['Status']}")
+                try:
+                    if "high" in row['Status'].lower():
+                        min_val = float(row['Value']) * 0.7
+                        max_val = float(row['Value']) * 0.9
+                    elif "low" in row['Status'].lower():
+                        min_val = float(row['Value']) * 1.1
+                        max_val = float(row['Value']) * 1.3
+                    else:
+                        min_val = float(row['Value']) * 0.8
+                        max_val = float(row['Value']) * 1.2
+                    gauge_chart = create_gauge_chart(float(row['Value']), min_val, max_val, row['Status'])
+                    if gauge_chart:
+                        st.pyplot(gauge_chart)
+                except Exception as e:
+                    st.write(e)
+                st.markdown("---")
+        
+        with tab3:
+            st.dataframe(df, use_container_width=True)
+        
+        with tab4:
+            st.header("Speech Playback")
+            # Generate the script text from the summary
+            script_text = script(report.get("summary", ""))
+            st.write("Below is the script that will be spoken:")
+            st.text_area("", script_text, height=150, key=f"script_{report['id']}")
                     
-                    volume = st.slider("Adjust Volume", min_value=0.0, max_value=1.0, value=1.0, step=0.1, key=f"vol_{report['id']}")
-                    if st.button("Play Script", key=f"play_{report['id']}"):
-                        audio_path = text_to_speech(script_text)
-                        # Convert audio file to a base64 string for HTML embedding
-                        def audio_file_to_base64(file_path: str) -> str:
-                            with open(file_path, "rb") as f:
-                                data = f.read()
-                            return base64.b64encode(data).decode("utf-8")
-                        audio_b64 = audio_file_to_base64(audio_path)
-                        audio_html = f"""
-                        <audio controls autoplay>
-                        <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
-                        Your browser does not support the audio element.
-                        </audio>
-                        <script>
-                            var audioElem = document.querySelector("audio");
-                            if (audioElem) {{
-                                audioElem.volume = {volume};
-                            }}
-                        </script>
-                        """
-                        st.markdown(audio_html, unsafe_allow_html=True)
-                        
+            volume = st.slider("Adjust Volume", min_value=0.0, max_value=1.0, value=1.0, step=0.1, key=f"vol_{report['id']}")
+            if st.button("Play Script", key=f"play_{report['id']}"):
+                audio_path = text_to_speech(script_text)
+                # Convert audio file to a base64 string for HTML embedding
+                def audio_file_to_base64(file_path: str) -> str:
+                    with open(file_path, "rb") as f:
+                        data = f.read()
+                    return base64.b64encode(data).decode("utf-8")
+                audio_b64 = audio_file_to_base64(audio_path)
+                audio_html = f"""
+                <audio controls autoplay>
+                    <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
+                    Your browser does not support the audio element.
+                </audio>
+                <script>
+                    var audioElem = document.querySelector("audio");
+                    if (audioElem) {{
+                        audioElem.volume = {volume};
+                    }}
+                </script>
+                """
+                st.markdown(audio_html, unsafe_allow_html=True)
+        
+        # Provide a back button so the user can return to the report queue.
+        if st.button("Back to Queue", key="back_to_queue"):
+            st.session_state.active_report = None
+
+    # If no active report is selected, show the report queue
+    else:
+        st.subheader("Patient Lab Reports Queue")
+        res = supabase.table("lab_reports") \
+            .select("*") \
+            .eq("doctor_id", doctor["email"]) \
+            .order("created_at", desc=False) \
+            .execute()
+        reports = res.data
+        any_reports = False
+        if not reports:
+            st.info("No lab reports submitted yet.")
+        else:
+            for report in reports:
+                any_reports = True
+                st.markdown(f"**Report ID:** {report['id']}")
+                submitted_at = report.get("created_at", "N/A")
+                try:
+                    submitted_str = datetime.fromisoformat(submitted_at).strftime("%Y-%m-%d %H:%M:%S")
+                except Exception:
+                    submitted_str = submitted_at
+                st.markdown(f"**Submitted:** {submitted_str}")
+                st.markdown(f"**Summary:** {report.get('summary', 'No summary available')}")
+                # When the "View Detailed Report" button is clicked, set the active report
+                if st.button("View Detailed Report", key=report["id"]):
+                    st.session_state.active_report = report
+    
     st.subheader("Your Patient Submission QR Code")
     qr_url = doctor.get("qr_url")
     if qr_url:
