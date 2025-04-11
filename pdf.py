@@ -705,11 +705,15 @@ def patient_submission_page(doctor_id: str):
             if not patient_name or not uploaded_file:
                 st.error("Please provide your name and upload a file.")
             else:
+                st.write("This is entering the summary phase")
                 full_text, extracted_data = get_pdf_text(uploaded_file)
                 lab_data_str = format_lab_data_for_prompt(extracted_data)
+                st.write("Extracted data:", lab_data_str)
                 summary = summarize_lab_report(lab_data_str)
+                st.write("Summary done")
                 file_url = upload_file_to_storage(uploaded_file)
                 # Omit created_at so default now() is used
+                st.write("Done with summary phase, uploading to Supabase")
                 report_data = {
                     "id": str(uuid.uuid4()),
                     "doctor_id": doctor_id,
