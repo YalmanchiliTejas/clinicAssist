@@ -356,13 +356,14 @@ def script(summary):
     genai.configure(api_key="AIzaSyB_V0B3ttXMYLn-4md_jEq_PdDRz7BJ0tM")
     model = genai.GenerativeModel("gemini-2.0-flash")
     prompt = (
-        "You are a medical assistant with excellent verbal communication skills. "
-        "Please read out the following lab test results in a clear and articulate manner, "
-        "ensuring that you mention each test's name, its numeric value, its unit, and its classification. "
-        "For example, say: 'Test Hemoglobin has a value of 14.2 grams per deciliter and is classified as Normal.' "
-        "Now, based on the lab results below, generate a concise spoken script that a lab assistant would use to quickly brief a doctor, and start directly from greeting the doctor:\n\n"
-        f"{summary}\n\n"
-        "Final Script:"
+      "You are a medical assistant with excellent verbal communication skills. "
+      "Please read out the following lab test results in a clear and articulate manner, "
+      "ensuring that you mention each test's name, its numeric value, its unit, and its classification. "
+      "For example, say: 'Test Hemoglobin has a value of 14.2 grams per deciliter and is classified as Normal.' "
+      "Now, based on the lab results below, generate a concise spoken script that begins immediately with the greeting 'Good morning, Doctor.' followed by the list of tests. "
+      "Do not include any additional commentary before the greeting or after the list of test details.\n\n"
+      f"{summary}\n\n"
+      "Final Script:"
     )
     response = model.generate_content(prompt)
        
@@ -930,6 +931,9 @@ def doctor_dashboard(doctor: dict):
         
         # Provide a back button so the user can return to the report queue.
         if st.button("Back to Queue", key="back_to_queue"):
+            script_key = f"script_text_{report['id']}"
+            if script_key in st.session_state:
+                del st.session_state[script_key]
             st.session_state.active_report = None
 
     # If no active report is selected, show the report queue
