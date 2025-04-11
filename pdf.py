@@ -749,6 +749,7 @@ def doctor_dashboard(doctor: dict):
 def main():
     query_params = st.query_params
     # If the URL has a "doctor_id" query parameter, show the patient submission page.
+    st.write("Query Parameters:", query_params)
     if "doctor_id" in query_params:
         doctor_id = query_params["doctor_id"][0]
         st.write("You are on the patient submission page.", doctor_id)
